@@ -6,7 +6,9 @@ import { FollowModel } from "../models/Follow.js";
 const followUser = asyncHandler( async(req, res, next) => {
     const { followerId } = req.body;
     const tagetId = req.params.id;
-
+    if(followerId === tagetId) {
+        return next (new AppError('You cannot follow yourself', 400));
+    }
     const tagetUser = await UserModel.findById(tagetId);
     if(!tagetUser) {
         return next(new AppError('User not fount', 400));

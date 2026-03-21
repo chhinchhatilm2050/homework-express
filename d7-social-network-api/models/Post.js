@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { AppError } from "../utils/appError";
+import { AppError } from "../utils/appError.js";
 
 const commentSchema = new mongoose.Schema({
     author: {
@@ -69,7 +69,7 @@ postSchema.virtual('likeCount').get(function() {
     return this.likes?.length || 0;
 });
 
-postSchema.virtuals('retweetCount').get(function() {
+postSchema.virtual('retweetCount').get(function() {
     return this.retweets?.length || 0;
 });
 
@@ -78,7 +78,7 @@ postSchema.virtual('commentCount').get(function() {
 });
 
 postSchema.methods.addLike = async function(userId) {
-    if(this.likes.includes(userId)) {
+    if(this.likes.some(id => id.toString() === userId)) {
         throw new AppError('You aleady like this post');
     } 
     this.likes.push(userId);
@@ -86,10 +86,26 @@ postSchema.methods.addLike = async function(userId) {
 };
 
 postSchema.methods.removeLike = async function (userId) {
-    if(!this.likes.includes(userId)) {
+    if(!this.likes.some(id => id.toString() === userId)) {
         throw new AppError('You have not like this post', 400);
     }
-    this.likes = this.likes.filter(id => id.toString() !== userId.toString())
+    this.likes = this.likes.filter(id => id.toString() !== userId)
+    return await this.save();
+}
+
+postSchema.methods.addRetweets = async function (userId) {
+    if(this.retweets.some(id => id.toString() === userId)) {
+        throw new AppError('You already share this post')
+    }
+    this.retweets.push(userId);
+    return await this.save();
+}
+
+postSchema.methods.removeRetweets = async function (userId) {
+    if(!this.retweets.some(id => id.toString() === userId)) {
+        throw new AppError('You are not allow to delete this comment', 400)
+    }
+    this.retweets = this.retweets.filter(id => id.toString() != userId);
     return await this.save();
 }
 

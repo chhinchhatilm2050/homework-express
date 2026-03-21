@@ -4,7 +4,7 @@ import asyncHandler from 'express-async-handler';
 
 const createUser = asyncHandler( async(req, res, next) => {
     const { name, username, email, password, bio, location, website, avatar } = req.body;
-    const usernameExists = await UserModel.findOne({username});
+    // const usernameExists = await UserModel.findOne({username});
     // if(usernameExists) {
     //     return next( new AppError('Username already exists', 400));
     // };
@@ -12,7 +12,6 @@ const createUser = asyncHandler( async(req, res, next) => {
     // if(emailExists) {
     //     return next( new AppError('Email already exists', 400))
     // };
-
     const user = new UserModel({
         name,
         username,
@@ -35,9 +34,10 @@ const getUserById = asyncHandler( async(req, res, next) => {
     const {id} = req.params;
     const user = await UserModel.findById(id)
     .select('-password')
+    .populate('posts')
     .populate('followerCount')   
     .populate('followingCount')  
-    .populate('postCount'); 
+    .populate('postCount')
     
     if(!user) {
         return next( new AppError('User not found', 404));

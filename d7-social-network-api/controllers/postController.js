@@ -28,7 +28,7 @@ const getSinglePost = asyncHandler ( async(req, res, next) => {
     const post = await PostModel.findById(req.params.id)
     .populate('author', 'name username avatar bio');
 
-     if(!post) {
+    if(!post) {
         return next(new AppError('Post not found', 404));
     }
 
@@ -117,7 +117,81 @@ const removeLike = asyncHandler ( async(req, res, next) => {
         status: 'success',
         likeCount: post.likeCount
     });
+});
+
+const addComment = asyncHandler (async(req, res, next) => {
+    const { authorId } = req.body;
+    const post = await PostModel.findById(req.params.id);
+    if(!post) {
+        return next( new AppError('Post not found', 404))
+    };
+
+    const user = await UserModel.findById(authorId);
+    if(!user) {
+        return next(new AppError('User not found', 404))
+    }
+    post.comments.push({
+        author: {
+            id: user._id,
+            name: user.name,
+            username: user.username,
+            avatar: user.avatar
+
+        },
+        text: req.body.text
+    });
+    await post.save();
+    const saveComment = post.comments[post.comments.length -1];
+    res.status(201).json({
+        status: 'success',
+        comment: saveComment
+    })
+});
+
+const deleteComment = asyncHandler (async(req, res, next) => {
+    const {postId, comomentId } = req.params;
+    const post = await PostModel.findById(postId);
+    if(!post) {
+        return next (new AppError('Post not found', 404));
+    };
+
+    const comment = post.comments.find((c) => c._id.toString() === comomentId.toString());
+    if(!comment) {
+        return next(new AppError('Comment not found', 404));
+    };
+    comment.deleteOne();
+    await post.save();
+     res.status(200).json({
+        status: 'success',
+        message: 'Comment deleted successfully'
+    });
+});
+
+const addRetweets = asyncHandler (async(req, res, next) => {
+    const {userId} = req.body;
+    const post = await PostModel.findById(req.params.id);
+    if(!post) {
+        return next (new AppError('Post not found', 404));
+    }
+    await post.addRetweets(userId);
+    res.status(201).json({
+        status: 'success',
+        retweetCount: post.retweetCount
+    });
 })
 
+const removeRetweets = asyncHandler (async(req, res, next) => {
+    const {userId} = req.body;
+    const post = await PostModel.findById(req.params.id);
+    if(!post) {
+        return next (new AppError('Post not found', 404));
+    }
+    await post.removeRetweets(userId);
+    res.status(200).json({
+        status: 'success',
+        retweetCount: post.retweetCount
+    })
+})
 
-export {createPost, getSinglePost, deletePost, getFeed, getUserPost, likePost, removeLike}
+export {createPost, getSinglePost, deletePost, getFeed, getUserPost, 
+likePost, removeLike, addComment, deleteComment, addRetweets, removeRetweets}
